@@ -39,13 +39,14 @@ jobs:
             zlib1g-dev libncurses5-dev libncursesw5-dev \
             cmake libffi-dev libssl-dev
 
-      - name: Install Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          packages: |
-            platform-tools
-            platforms;android-35
-            build-tools;35.0.0
+      - name: Install Android SDK packages
+        run: |
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -name sdkmanager -type f | head -n 1)"
+          echo "Using sdkmanager: $SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses
+          "$SDKMANAGER" "platform-tools"
+          "$SDKMANAGER" "platforms;android-35"
+          "$SDKMANAGER" "build-tools;35.0.0"
 
       - name: Install Buildozer
         run: |
