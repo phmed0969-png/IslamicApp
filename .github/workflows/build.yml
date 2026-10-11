@@ -43,34 +43,47 @@ jobs:
             zlib1g-dev libncurses5-dev libncursesw5-dev \
             cmake libffi-dev libssl-dev
 
-      - name: Install Android SDK in Buildozer directory
+      - name: Install Android SDK
         run: |
           SDK_DIR="$HOME/.buildozer/android/platform/android-sdk"
           mkdir -p "$SDK_DIR"
 
-          SDKMANAGER="$(find /usr/local/lib/android/sdk/cmdline-tools -name sdkmanager -type f | head -n 1)"
-
-          if [ -z "$SDKMANAGER" ]; then
-            SDKMANAGER="$(find "$ANDROID_HOME" -name sdkmanager -type f 2>/dev/null | head -n 1)"
-          fi
+          SOURCE_SDK="/usr/local/lib/android/sdk"
+          SDKMANAGER="$(find "$SOURCE_SDK/cmdline-tools" -name sdkmanager -type f | head -n 1)"
 
           if [ -z "$SDKMANAGER" ]; then
             echo "ERROR: sdkmanager not found"
             exit 1
           fi
 
-          echo "Using: $SDKMANAGER"
-          echo "Installing SDK into: $SDK_DIR"
+          echo "Using SDK manager: $SDKMANAGER"
+          echo "Installing Android SDK into: $SDK_DIR"
 
           yes | "$SDKMANAGER" --sdk_root="$SDK_DIR" --licenses
 
+          "$SDKMANAGER" --sdk_root="$SDK_DIR" "cmdline-tools;latest"
           "$SDKMANAGER" --sdk_root="$SDK_DIR" "platform-tools"
           "$SDKMANAGER" --sdk_root="$SDK_DIR" "platforms;android-35"
-          "$SDKMANAGER" --sdk_root="$SDK_DIR" "build-tools;37.0.0"
+          "$SDKMANAGER" --sdk_root="$SDK_DIR" "build-tools;35.0.0"
 
-          echo "Checking installed files..."
-          ls -la "$SDK_DIR/build-tools"
-          test -x "$SDK_DIR/build-tools/37.0.0/aidl"
+          mkdir -p "$SDK_DIR/tools/bin"
+
+          SDKMANAGER_INSTALLED="$(find "$SDK_DIR/cmdline-tools" -name sdkmanager -type f | head -n 1)"
+
+          if [ -z "$SDKMANAGER_INSTALLED" ]; then
+            SDKMANAGER_INSTALLED="$SDKMANAGER"
+          fi
+
+          ln -sf "$SDKMANAGER_INSTALLED" "$SDK_DIR/tools/bin/sdkmanager"
+
+          echo "ANDROIDSDK=$SDK_DIR" >> "$GITHUB_ENV"
+          echo "ANDROID_HOME=$SDK_DIR" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$SDK_DIR" >> "$GITHUB_ENV"
+
+          echo "Checking SDK files..."
+          ls -l "$SDK_DIR/tools/bin/sdkmanager"
+          ls -l "$SDK_DIR/build-tools/35.0.0/aidl"
+          ls -ld "$SDK_DIR/platforms/android-35"
 
       - name: Install Buildozer
         run: |
